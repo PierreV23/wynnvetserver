@@ -1,8 +1,8 @@
 use std::{
     collections::HashMap,
-    sync::{OnceLock, Arc, LazyLock}
+    sync::{Arc, LazyLock, OnceLock},
 };
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{Mutex, mpsc};
 use uuid::Uuid;
 
 use std::env;
@@ -12,9 +12,8 @@ static REMOTE_API_URL: LazyLock<String> = LazyLock::new(|| {
     env::var("REMOTE_API_URL").unwrap_or_else(|_| "http://localhost:9421".to_string())
 });
 
-static API_SERVER_PORT: LazyLock<String> = LazyLock::new(|| {
-    env::var("API_SERVER_PORT").unwrap_or_else(|_| "9420".to_string())
-});
+static API_SERVER_PORT: LazyLock<String> =
+    LazyLock::new(|| env::var("API_SERVER_PORT").unwrap_or_else(|_| "9420".to_string()));
 // honestly it's dumb i define these globally using lazylock, bcz i only use them once in the code and it causes annoying `&*` later
 
 // registry is what will be storing the 'sender' and 'receiver' for a particular minecraft user
@@ -55,7 +54,6 @@ pub fn on_incoming_chat(uuid: Uuid, msg: String) {
     });
 }
 
-
 // http server:
 
 //
@@ -67,6 +65,7 @@ pub async fn send_to_player(uuid: Uuid, msg: String) -> bool {
     }
 }
 
+/// # Panics
 pub fn start_http_server() {
     tokio::spawn(async {
         use axum::extract::Query;
@@ -97,4 +96,3 @@ pub fn start_http_server() {
         axum::serve(listener, app).await.unwrap();
     });
 }
-

@@ -249,7 +249,7 @@ async fn check_incoming_message_to_player(was_in_play_state: bool, client_data: 
         let rx = crate::wynn::register(uuid).await;
         let mut rx = rx.lock().await;
         while let Ok(msg) = rx.try_recv() {
-            let _ = send_chat_message_to_player(&client_data, &msg).await;
+            let _ = send_chat_message_to_player(client_data, &msg).await;
         }
     }
 }
@@ -259,7 +259,10 @@ async fn handle_unregistering_client(client_data: &ClientData) {
     crate::wynn::unregister(uuid).await;
 }
 
-async fn send_chat_message_to_player(client_data: &ClientData, msg: &str) -> Result<(), PacketProcessingError> {
+async fn send_chat_message_to_player(
+    client_data: &ClientData,
+    msg: &str,
+) -> Result<(), PacketProcessingError> {
     let pv = client_data.protocol_version().await;
     let component = pico_text_component::prelude::parse_mini_message(msg).unwrap_or_default();
     let packet = PacketRegistry::SystemChatMessage(
