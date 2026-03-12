@@ -5,6 +5,7 @@ mod handlers;
 mod kick_messages;
 mod server;
 mod server_state;
+pub mod wynn;
 
 use crate::cli::Cli;
 use clap::Parser;

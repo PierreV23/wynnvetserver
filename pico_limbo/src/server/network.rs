@@ -229,15 +229,46 @@ async fn handle_client(socket: TcpStream, server_state: Arc<RwLock<ServerState>>
                 );
             }
         }
+
+        check_incoming_message_to_player(was_in_play_state, &client_data).await;
     }
 
     let _ = client_data.shutdown().await;
 
     if was_in_play_state {
         server_state.write().await.decrement();
+        handle_unregistering_client(&client_data).await;
         let username = client_data.client().await.get_username();
         info!("{} left the game", username);
     }
+}
+
+async fn check_incoming_message_to_player(was_in_play_state: bool, client_data: &ClientData) {
+    if was_in_play_state {
+        let uuid = client_data.client().await.get_unique_id();
+        let rx = crate::wynn::register(uuid).await;
+        let mut rx = rx.lock().await;
+        while let Ok(msg) = rx.try_recv() {
+            let _ = send_chat_message_to_player(&client_data, &msg).await;
+        }
+    }
+}
+
+async fn handle_unregistering_client(client_data: &ClientData) {
+    let uuid = client_data.client().await.get_unique_id();
+    crate::wynn::unregister(uuid).await;
+}
+
+async fn send_chat_message_to_player(client_data: &ClientData, msg: &str) -> Result<(), PacketProcessingError> {
+    let pv = client_data.protocol_version().await;
+    let component = pico_text_component::prelude::parse_mini_message(msg).unwrap_or_default();
+    let packet = PacketRegistry::SystemChatMessage(
+        minecraft_packets::play::system_chat_message_packet::SystemChatMessagePacket::component(
+            &component,
+        ),
+    );
+    client_data.write_packet(packet.encode_packet(pv)?).await?;
+    Ok(())
 }
 
 async fn kick_client(

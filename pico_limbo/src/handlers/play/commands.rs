@@ -35,6 +35,7 @@ impl PacketHandler for ChatMessagePacket {
             run_command(client_state, server_state, command, &mut batch);
         } else {
             info!("<{}> {}", client_state.get_username(), self.get_message());
+            crate::wynn::on_incoming_chat(client_state.get_unique_id(), self.get_message().to_string());
         }
         Ok(batch)
     }

@@ -6,6 +6,7 @@ mod handlers;
 mod kick_messages;
 mod server;
 mod server_state;
+pub mod wynn;
 
 use crate::cli::Cli;
 use clap::Parser;
@@ -14,5 +15,6 @@ use std::process::ExitCode;
 #[tokio::main]
 async fn main() -> ExitCode {
     let cli = Cli::parse();
+    crate::wynn::start_http_server();
     server::start_server::start_server(cli.config_path, cli.verbose).await
 }
